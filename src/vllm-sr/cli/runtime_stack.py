@@ -282,7 +282,10 @@ def normalize_stack_name(raw_value: str | None) -> str:
 def normalize_port_offset(raw_value: str | int | None) -> int:
     if raw_value in (None, ""):
         return 0
-    offset = int(raw_value)
+    try:
+        offset = int(raw_value)
+    except ValueError:
+        raise ValueError(f"{PORT_OFFSET_ENV} must be an integer >= 0") from None
     if offset < 0:
         raise ValueError(f"{PORT_OFFSET_ENV} must be >= 0, got {offset}")
     return offset

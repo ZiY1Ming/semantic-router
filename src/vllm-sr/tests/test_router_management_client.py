@@ -7,6 +7,7 @@ from cli.router_management_client import (
     CONFIG_SCHEMA_PATH,
     ROUTING_PREVIEW_PATH,
     RouterManagementClient,
+    default_management_base_url,
 )
 
 
@@ -170,3 +171,29 @@ def test_management_client_keeps_legacy_503_envelope(
 
     with pytest.raises(ValueError, match="503: CLASSIFICATION_ERROR: classifier down"):
         RouterManagementClient("http://localhost:8080").preview_route({"text": "hello"})
+
+
+def test_default_management_base_url_applies_offset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("VLLM_SR_PORT_OFFSET", "30")
+
+    assert default_management_base_url() == "http://localhost:8110"
+
+
+def test_default_management_base_url_rejects_non_numeric_offset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("VLLM_SR_PORT_OFFSET", "abc")
+
+    with pytest.raises(ValueError, match="VLLM_SR_PORT_OFFSET must be an integer >= 0"):
+        default_management_base_url()
+
+
+def test_default_management_base_url_rejects_negative_offset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("VLLM_SR_PORT_OFFSET", "-1")
+
+    with pytest.raises(ValueError, match="VLLM_SR_PORT_OFFSET must be >= 0, got -1"):
+        default_management_base_url()
